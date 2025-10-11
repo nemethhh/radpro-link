@@ -97,103 +97,11 @@ jobs:
             .pio/build/seeed-xiao-nrf54l15/firmware.elf
           retention-days: 30
 
-  lint:
-    name: Static Analysis
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.27.2
-      options: --user root
-    env:
-      PIO_CACHE_DIR: /tmp/pio-cache
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Cache PlatformIO
-        if: github.actor != 'nektos/act'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio-zephyr-${{ hashFiles('**/platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-zephyr-
-
-      - name: Setup PlatformIO
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq python3-venv python3-pip
-          python3 -m pip install -q --upgrade pip platformio
-
-      - name: Run static analysis
-        run: pio check --fail-on-defect=medium --skip-packages
-        continue-on-error: true
-
-  size-report:
-    name: Firmware Size Report
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.27.2
-      options: --user root
-    env:
-      PIO_CACHE_DIR: /tmp/pio-cache
-    needs: build
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Cache PlatformIO
-        if: github.actor != 'nektos/act'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.platformio/.cache
-          key: ${{ runner.os }}-pio-zephyr-${{ hashFiles('**/platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-zephyr-
-
-      - name: Setup PlatformIO
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq python3-venv python3-pip
-          python3 -m pip install -q --upgrade pip platformio
-
-      - name: Build and analyze size
-        run: |
-          pio run
-
-          # Fix permissions for .pio directory
-          if [ -d .pio ]; then
-            chmod -R 755 .pio 2>/dev/null || true
-            WORKSPACE_UID=$(stat -c '%u' . 2>/dev/null || echo "1000")
-            WORKSPACE_GID=$(stat -c '%g' . 2>/dev/null || echo "1000")
-            chown -R ${WORKSPACE_UID}:${WORKSPACE_GID} .pio 2>/dev/null || true
-          fi
-
-          echo "=== Firmware Size Report ==="
-          pio run --target size
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request' && github.actor != 'nektos/act'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '## ✅ Firmware Size Report\n\nBuild completed successfully! Check the workflow logs for detailed size information.'
-            });
-
   release:
     name: Create Release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build, lint]
+    needs: [build]
     permissions:
       contents: write
 

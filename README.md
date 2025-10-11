@@ -31,7 +31,7 @@ The XIAO nRF54L15 board acts as a bridge, translating between the RadPro device'
   - Connect XIAO TX (Pin D6/P2.8) to RadPro RX
   - Connect XIAO RX (Pin D7/P2.7) to RadPro TX
   - Connect GND between devices
-  - Connect XIAO 3.3V to RadPro VCC/3.3V (if RadPro needs external power)
+  - Connect XIAO Bat+ to RadPro VCC/3.3V
   - Baud Rate: 115200 (default)
 
 ## Quick Start
