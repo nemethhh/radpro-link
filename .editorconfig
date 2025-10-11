@@ -1,0 +1,52 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+# C/C++ source files
+[*.{c,h,cpp,hpp}]
+indent_style = tab
+indent_size = 8
+max_line_length = 120
+
+# CMake files
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 4
+
+# Kconfig files
+[{Kconfig,Kconfig.*,*.conf}]
+indent_style = space
+indent_size = 4
+
+# Device Tree files
+[*.{dts,dtsi,overlay}]
+indent_style = space
+indent_size = 4
+
+# Python scripts
+[*.py]
+indent_style = space
+indent_size = 4
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+# INI files (platformio.ini)
+[*.ini]
+indent_style = space
+indent_size = 4

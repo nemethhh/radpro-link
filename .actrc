@@ -1,0 +1,22 @@
+# act configuration file for local GitHub Actions testing
+# Use Zephyr official Docker image for consistency with production CI
+-P ubuntu-latest=ghcr.io/zephyrproject-rtos/ci:v0.27.2
+
+# Default options
+--container-daemon-socket -
+
+# Use verbose output by default
+-v
+
+# Allow act to work without artifacts
+--artifact-server-path /tmp/artifacts
+
+# Keep containers for debugging (remove if disk space is limited)
+--reuse
+
+# Bind mount the workspace to preserve build artifacts
+# This ensures .pio directory is created on host, not just in container
+--bind
+
+# Preserve file ownership (build artifacts will be owned by current user)
+--use-gitignore=false
