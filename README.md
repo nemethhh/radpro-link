@@ -28,10 +28,10 @@ The XIAO nRF54L15 board acts as a bridge, translating between the RadPro device'
 - **Board**: Seeed Studio XIAO nRF54L15
 - **RadPro Device**: Any RadPro radiation detector with UART interface
 - **Connections to RadPro Device**:
-  - Connect XIAO TX (Pin D0/P0.2) to RadPro RX
-  - Connect XIAO RX (Pin D1/P0.3) to RadPro TX
+  - Connect XIAO TX (Pin D6/P2.8) to RadPro RX
+  - Connect XIAO RX (Pin D7/P2.7) to RadPro TX
   - Connect GND between devices
-  - Connect to 3.3v pad
+  - Connect XIAO 3.3V to RadPro VCC/3.3V (if RadPro needs external power)
   - Baud Rate: 115200 (default)
 
 ## Quick Start

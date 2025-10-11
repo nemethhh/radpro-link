@@ -81,7 +81,7 @@ The initialization order is critical:
 1. **Board hardware** (`board_init()`) - GPIO, clocks
 2. **LED status** (`led_status_init()`) - LED initialization
 3. **Security manager** (`security_manager_init()`) - Start pairing window timer
-4. **UART bridge** (`uart_bridge_init()`) - Configure UART20 with async API
+4. **UART bridge** (`uart_bridge_init()`) - Configure UART21 with async API
 5. **Bluetooth stack** (`bt_enable()`) - Initialize BLE controller
 6. **Settings** (`settings_load()`) - Load bonding information from NVS
 7. **BLE service** (`ble_service_init()`) - Register NUS callbacks
@@ -125,10 +125,10 @@ The initialization order is critical:
 
 ### Hardware Configuration (Device Tree Overlay)
 
-- **UART20**: External device communication (D0/D1 pins, 115200 baud)
-  - TX: P0.2 (D0), RX: P0.3 (D1)
+- **UART21**: External device communication (D6/D7 pins, 115200 baud)
+  - TX: P2.8 (D6), RX: P2.7 (D7)
   - Async API with DMA for efficient data transfer
-  - Requires IMU disabled (IMU uses P0.2 for interrupt)
+  - Uses board default pinctrl configuration
 - **LED0**: Status indication (P2.0, single LED)
   - Uses blink patterns to indicate different states
 - **Console**: RTT (Real-Time Transfer via SWD debug interface)
@@ -163,7 +163,8 @@ The single onboard LED uses different blink patterns:
 
 **Changing UART pins or baud rate**:
 - Edit `zephyr/boards/xiao_nrf54l15_nrf54l15_cpuapp.overlay`
-- Update `pinctrl` sections and `current-speed` property
+- To use custom pins: add custom `pinctrl` configuration sections
+- To change baud rate: update `current-speed` property (default: 115200)
 
 **Adjusting security parameters**:
 - Pairing window: Change `PAIRING_WINDOW_MS` in `main.c:23`
@@ -205,6 +206,6 @@ openocd -f interface/jlink.cfg -c "transport select swd" \
 - **Build errors**: Ensure you're in the repository root directory
 - **Link errors**: Verify all source files listed in `zephyr/CMakeLists.txt`
 - **No console output**: Connect J-Link debugger to SWD pins and use JLinkRTTClient
-- **Pin conflicts**: Verify IMU is disabled in overlay (required for D0/D1 UART pins)
+- **UART not working**: Verify connections to D6/D7 pins (P2.8/P2.7)
 - **Security issues**: Check pairing window hasn't expired (visible in RTT logs)
 - **Connection failures**: Verify device not bonded to max devices already
