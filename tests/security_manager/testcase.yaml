@@ -1,0 +1,4 @@
+tests:
+  radpro_link.security_manager:
+    tags: unit
+    type: unit
