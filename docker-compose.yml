@@ -87,6 +87,20 @@ services:
         touch /root/.platformio/.initialized
         echo "PlatformIO packages ready"
 
+  pio-build:
+    image: platformio/platformio-core:latest
+    depends_on:
+      pio-init:
+        condition: service_completed_successfully
+    volumes:
+      - .:/workspace
+      - pio-packages:/root/.platformio
+      - ./build:/workspace/.pio/build
+    working_dir: /workspace
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - pio run
+
 volumes:
   zephyr-workspace:
   pio-packages:
