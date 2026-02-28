@@ -69,5 +69,24 @@ services:
           [ "$$FAIL" -eq 0 ]
         fi
 
+  pio-init:
+    image: platformio/platformio-core:latest
+    volumes:
+      - .:/workspace
+      - pio-packages:/root/.platformio
+    working_dir: /workspace
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -f /root/.platformio/.initialized ]; then
+          echo "PlatformIO packages already initialized"
+          exit 0
+        fi
+        echo "Installing PlatformIO packages..."
+        pio pkg install
+        touch /root/.platformio/.initialized
+        echo "PlatformIO packages ready"
+
 volumes:
   zephyr-workspace:
+  pio-packages:
