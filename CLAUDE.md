@@ -51,30 +51,32 @@ The firmware follows a **modular, layered architecture** with clear separation o
 src/
 ├── main.c                    # Application entry point, initialization sequence
 ├── ble/
-│   ├── ble_service.c/.h      # BLE stack, advertising, NUS service, MTU management
+│   └── ble_service.c/.h      # BLE stack, advertising, NUS service, MTU management
 ├── uart/
-│   ├── uart_bridge.c/.h      # UART async API, data buffering
+│   └── uart_bridge.c/.h      # UART async API, data buffering (256-byte buffers)
 ├── security/
-│   ├── security_manager.c/.h # Pairing window timer, bonding policy
+│   └── security_manager.c/.h # Pairing window timer, bonding policy
 ├── led/
-│   ├── led_status.c/.h       # LED status indication
-└── board/
-    └── board_config.c/.h     # Hardware initialization, pin configuration
+│   └── led_status.c/.h       # LED status indication
+├── board/
+│   └── board_config.c/.h     # Hardware initialization, pin configuration
+└── dfu/
+    └── dfu_service.c/.h      # BLE FOTA via MCUmgr SMP, MCUboot integration
 ```
 
 ### Data Flow
 
-**UART → BLE Direction** (main.c:121-130):
+**UART → BLE Direction** (main.c:126-135):
 1. UART module receives data via async API → calls `uart_data_handler()`
 2. Handler checks if BLE is authenticated via `ble_service_is_authenticated()`
 3. If authenticated, forwards data via `ble_service_send()`
 
-**BLE → UART Direction** (main.c:132-139):
+**BLE → UART Direction** (main.c:137-144):
 1. BLE module receives data via NUS characteristic → calls `ble_data_handler()`
 2. Handler forwards directly to UART via `uart_bridge_send()`
-3. Security check happens inside BLE module before callback (ble_service.c:158)
+3. Security check happens inside BLE module before callback (ble_service.c:160)
 
-### Initialization Sequence (main.c:30-108)
+### Initialization Sequence (main.c:30-123)
 
 The initialization order is critical:
 
@@ -85,12 +87,13 @@ The initialization order is critical:
 5. **Bluetooth stack** (`bt_enable()`) - Initialize BLE controller
 6. **Settings** (`settings_load()`) - Load bonding information from NVS
 7. **BLE service** (`ble_service_init()`) - Register NUS callbacks
-8. **Advertising** (`ble_service_start_advertising()`) - Start connectable advertising
+8. **DFU service** (`dfu_service_init()`) - Initialize MCUmgr SMP handlers
+9. **Advertising** (`ble_service_start_advertising()`) - Start connectable advertising
 
 ### Threading Model
 
 - **Main thread**: Initialization, then sleeps forever
-- **Status monitor thread** (main.c:132-149): Updates LED status every second based on pairing window and connection state
+- **Status monitor thread** (main.c:147-162): Updates LED status every second based on pairing window and connection state
 - **System work queue**: Handles BLE callbacks, UART async callbacks
 - **BLE RX thread**: Processes incoming BLE data (Zephyr internal, 2048 bytes stack)
 
@@ -105,14 +108,31 @@ The initialization order is critical:
 
 **Bond Management** (Automatic):
 - When storage is full (4 bonds), new pairing automatically replaces oldest unused bond
-- Enabled via CONFIG_BT_KEYS_OVERWRITE_OLDEST=y (zephyr/prj.conf:57)
+- Enabled via CONFIG_BT_KEYS_OVERWRITE_OLDEST=y (zephyr/prj.conf:58)
 - "Oldest unused" = least recently connected device
 - Ensures seamless operation without manual bond clearing
 - Each bond consumes ~200-300 bytes of NVS storage
 
 **Security Checks**:
-- Incoming BLE data rejected if security level < L2 (ble_service.c:158)
-- Outgoing data only sent if authenticated (main.c:124)
+- Incoming BLE data rejected if security level < L2 (ble_service.c:160)
+- Outgoing data only sent if authenticated (main.c:129)
+
+### DFU / FOTA Updates
+
+**Wireless Firmware Update** via MCUmgr SMP over BLE:
+- MCUboot bootloader validates and swaps firmware images (dual-slot)
+- MCUmgr SMP server runs over BLE transport (auto-registered via Kconfig)
+- Requires bonded connection (CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN=y)
+- Use **nRF Connect Device Manager** mobile app to perform updates
+- Build generates firmware images for OTA upload
+
+**Update Flow**:
+1. Build new firmware with `pio run`
+2. Locate firmware image in `.pio/build/` output
+3. Transfer to phone, open nRF Connect Device Manager
+4. Connect to RadPro-Link, upload new image
+5. Device reboots, MCUboot swaps and validates new image
+6. If new image fails, MCUboot automatically reverts
 
 ### BLE Configuration
 
@@ -169,8 +189,8 @@ The single onboard LED uses different blink patterns:
 **Adjusting security parameters**:
 - Pairing window: Change `PAIRING_WINDOW_MS` in `main.c:23`
 - Max bonded devices: Change `CONFIG_BT_MAX_PAIRED` in `zephyr/prj.conf:36`
-- Bond eviction: Controlled by `CONFIG_BT_KEYS_OVERWRITE_OLDEST` in `zephyr/prj.conf:57`
-- Security level enforcement: See `ble_service.c:158` and `ble_service.c:222`
+- Bond eviction: Controlled by `CONFIG_BT_KEYS_OVERWRITE_OLDEST` in `zephyr/prj.conf:58`
+- Security level enforcement: See `ble_service.c:160` and `ble_service.c:223`
 
 **Changing BLE device name**:
 - Edit `CONFIG_BT_DEVICE_NAME` in `zephyr/prj.conf:33`
