@@ -41,6 +41,9 @@ target_sources(app PRIVATE
 
     # Board support
     ../src/board/board_config.c
+
+    # DFU module
+    ../src/dfu/dfu_service.c
 )
 
 # Include directories
@@ -51,4 +54,5 @@ target_include_directories(app PRIVATE
     ../src/security
     ../src/led
     ../src/board
+    ../src/dfu
 )

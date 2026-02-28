@@ -15,6 +15,7 @@
 #include "uart/uart_bridge.h"
 #include "security/security_manager.h"
 #include "led/led_status.h"
+#include "dfu/dfu_service.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -100,6 +101,13 @@ static int app_init(void)
 	err = ble_service_init(ble_data_handler);
 	if (err) {
 		LOG_ERR("BLE service init failed: %d", err);
+		return err;
+	}
+
+	/* Initialize DFU service (MCUmgr SMP) */
+	err = dfu_service_init();
+	if (err) {
+		LOG_ERR("DFU service init failed: %d", err);
 		return err;
 	}
 
