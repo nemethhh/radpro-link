@@ -97,11 +97,81 @@ jobs:
             .pio/build/seeed-xiao-nrf54l15/firmware.elf
           retention-days: 30
 
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.28.8
+      options: --user root
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Zephyr workspace
+        if: github.actor != 'nektos/act'
+        uses: actions/cache@v4
+        with:
+          path: /zephyr-workspace
+          key: zephyr-workspace-v4.2.0  # bump this when changing west init --mr version below
+          restore-keys: |
+            zephyr-workspace-
+
+      - name: Init Zephyr workspace
+        run: |
+          if [ -d /zephyr-workspace/zephyr ]; then
+            echo "Zephyr workspace already initialised (cache hit)"
+          else
+            echo "Initialising Zephyr v4.2.0 workspace..."
+            mkdir -p /zephyr-workspace
+            cd /zephyr-workspace
+            west init --mr v4.2.0
+            west update --narrow --fetch-opt=--depth=1 zephyr
+            echo "Zephyr workspace ready"
+          fi
+
+      - name: Run unit tests
+        run: |
+          set -e
+          export ZEPHYR_BASE=/zephyr-workspace/zephyr
+          export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+          export ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-0.17.4
+
+          PASS=0
+          FAIL=0
+          FAILED_SUITES=""
+
+          for suite in tests/*/; do
+            [ -f "${suite}CMakeLists.txt" ] || continue
+            name=$(basename "$suite")
+            echo ""
+            echo "=== Suite: $name ==="
+            cd "$GITHUB_WORKSPACE/$suite"
+            rm -rf build
+            if cmake -B build -GNinja -DBOARD=unit_testing 2>&1 && \
+               ninja -C build 2>&1 && \
+               ./build/testbinary 2>&1; then
+              PASS=$((PASS + 1))
+            else
+              FAIL=$((FAIL + 1))
+              FAILED_SUITES="$FAILED_SUITES $name"
+              echo "FAILED: $name"
+            fi
+            cd "$GITHUB_WORKSPACE"
+          done
+
+          echo ""
+          echo "=== RESULTS: $PASS passed, $FAIL failed ==="
+          if [ -n "$FAILED_SUITES" ]; then
+            echo "Failed suites:$FAILED_SUITES"
+          fi
+          [ "$FAIL" -eq 0 ]
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build]
+    needs: [build, unit-test]
     permissions:
       contents: write
 
