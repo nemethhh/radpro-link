@@ -1,0 +1,4 @@
+tests:
+  radpro_link.board_config:
+    tags: unit
+    type: unit

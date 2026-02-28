@@ -1,0 +1,4 @@
+tests:
+  radpro_link.main_flow:
+    tags: unit
+    type: unit

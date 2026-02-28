@@ -1,0 +1,4 @@
+tests:
+  radpro_link.uart_bridge:
+    tags: unit
+    type: unit

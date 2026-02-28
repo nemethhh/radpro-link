@@ -1,0 +1,4 @@
+tests:
+  radpro_link.ble_service:
+    tags: unit
+    type: unit

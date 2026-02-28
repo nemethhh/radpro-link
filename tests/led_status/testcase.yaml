@@ -1,0 +1,4 @@
+tests:
+  radpro_link.led_status:
+    tags: unit
+    type: unit

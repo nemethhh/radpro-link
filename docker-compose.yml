@@ -48,6 +48,7 @@ services:
           PASS=0
           FAIL=0
           for suite in tests/*/; do
+            cd /workspace
             [ -f "$$suite/CMakeLists.txt" ] || continue
             name=$$(basename "$$suite")
             echo ""

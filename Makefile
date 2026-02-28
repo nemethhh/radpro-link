@@ -8,7 +8,8 @@ test: zephyr-init
 
 ## Run a single test suite (usage: make test-suite SUITE=security_manager)
 test-suite: zephyr-init
-	$(COMPOSE) run --rm -e TEST_DIR=tests/$(SUITE) unit-test
+	$(COMPOSE) run --rm -w /workspace/tests/$(SUITE) --entrypoint bash unit-test \
+		-c 'set -e; rm -rf build; cmake -B build -GNinja -DBOARD=unit_testing 2>&1; ninja -C build 2>&1; ./build/testbinary'
 
 ## Initialize Zephyr workspace (only needed once, cached in Docker volume)
 zephyr-init:

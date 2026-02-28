@@ -35,6 +35,7 @@ venv/
 # Documentation
 readme/
 .claude/
+docs/reference/
 
 # Worktrees
 .worktrees/
