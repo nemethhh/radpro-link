@@ -14,9 +14,9 @@ LOG_MODULE_REGISTER(led_status, LOG_LEVEL_INF);
 /* User LED GPIO definition - from device tree */
 static const struct gpio_dt_spec user_led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
-#define FAST_BLINK_INTERVAL_MS 250
-#define SLOW_BLINK_INTERVAL_MS 1000
-#define PULSE_STEP_MS 50
+#define FAST_BLINK_INTERVAL_MS   250
+#define MEDIUM_BLINK_INTERVAL_MS 500
+#define SLOW_BLINK_INTERVAL_MS   1000
 
 /* State */
 static bool is_connected = false;
@@ -111,7 +111,7 @@ static void led_status_thread(void)
 		/* Determine blink pattern based on state (pairing window active) */
 		if (is_connected) {
 			/* Pairing window active AND connected: medium blink */
-			blink_interval_ms = 500;
+			blink_interval_ms = MEDIUM_BLINK_INTERVAL_MS;
 		} else {
 			/* Pairing window active, not connected: fast blink */
 			blink_interval_ms = FAST_BLINK_INTERVAL_MS;
@@ -125,9 +125,3 @@ static void led_status_thread(void)
 }
 
 K_THREAD_DEFINE(led_status_thread_id, 1024, led_status_thread, NULL, NULL, NULL, 7, 0, 0);
-
-void led_status_start(void)
-{
-	/* Thread starts automatically with K_THREAD_DEFINE */
-	LOG_DBG("LED status thread running");
-}

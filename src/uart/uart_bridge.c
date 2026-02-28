@@ -11,11 +11,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(uart_bridge, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(uart_bridge, LOG_LEVEL_DBG);
 
-#define UART_BUF_SIZE 40
+#define UART_BUF_SIZE           256
 #define UART_WAIT_FOR_BUF_DELAY K_MSEC(50)
-#define UART_WAIT_FOR_RX 50
+#define UART_WAIT_FOR_RX_MS     50
 
 struct uart_data_t {
 	void *fifo_reserved;
@@ -117,7 +117,7 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 			return;
 		}
 
-		uart_rx_enable(uart, buf->data, sizeof(buf->data), UART_WAIT_FOR_RX);
+		uart_rx_enable(uart, buf->data, sizeof(buf->data), UART_WAIT_FOR_RX_MS);
 		break;
 
 	case UART_RX_BUF_REQUEST:
@@ -174,7 +174,7 @@ static void uart_work_handler(struct k_work *item)
 		return;
 	}
 
-	uart_rx_enable(uart, buf->data, sizeof(buf->data), UART_WAIT_FOR_RX);
+	uart_rx_enable(uart, buf->data, sizeof(buf->data), UART_WAIT_FOR_RX_MS);
 }
 
 /* RX processing thread */
@@ -256,7 +256,7 @@ int uart_bridge_init(uart_data_received_cb_t data_cb)
 	}
 
 	/* Enable RX */
-	err = uart_rx_enable(uart, rx->data, sizeof(rx->data), UART_WAIT_FOR_RX);
+	err = uart_rx_enable(uart, rx->data, sizeof(rx->data), UART_WAIT_FOR_RX_MS);
 	if (err) {
 		LOG_ERR("Failed to enable RX: %d", err);
 		k_free(rx);
@@ -282,7 +282,7 @@ int uart_bridge_send(const uint8_t *data, uint16_t len)
 		struct uart_data_t *tx = k_malloc(sizeof(*tx));
 
 		if (!tx) {
-			LOG_ERR("Failed to allocate TX buffer");
+			LOG_ERR("Failed to allocate TX buffer at offset %u/%u", pos, len);
 			k_sleep(K_MSEC(10));
 			return -ENOMEM;
 		}
@@ -307,6 +307,7 @@ int uart_bridge_send(const uint8_t *data, uint16_t len)
 
 		err = uart_tx(uart, tx->data, tx->len, SYS_FOREVER_MS);
 		if (err) {
+			LOG_DBG("TX busy, queuing %u bytes", tx->len);
 			k_fifo_put(&fifo_uart_tx_data, tx);
 		}
 	}

@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/services/nus.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(ble_service, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(ble_service, LOG_LEVEL_DBG);
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
@@ -154,6 +154,8 @@ static struct bt_gatt_cb gatt_callbacks = {
 /* NUS callbacks - Zephyr API */
 static void bt_receive_cb(struct bt_conn *conn, const void *data, uint16_t len, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	/* Check if device is authenticated */
 	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
 		LOG_WRN("Rejecting %d bytes from non-authenticated device", len);
@@ -170,7 +172,6 @@ static void bt_receive_cb(struct bt_conn *conn, const void *data, uint16_t len, 
 
 static struct bt_nus_cb nus_cb = {
 	.received = bt_receive_cb,
-	.notif_enabled = NULL,  /* Optional: handle notification enable/disable */
 };
 
 /* Advertising work handler */

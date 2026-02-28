@@ -39,9 +39,4 @@ void led_status_set_pairing_window(bool pairing_active);
  */
 void led_status_error(void);
 
-/**
- * @brief Start LED status update thread
- */
-void led_status_start(void);
-
 #endif /* LED_STATUS_H */
