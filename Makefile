@@ -1,4 +1,4 @@
-.PHONY: test test-suite zephyr-init test-clean help
+.PHONY: test test-suite zephyr-init test-clean build pio-init build-clean pio-clean help
 
 COMPOSE := docker compose
 
@@ -24,6 +24,23 @@ test-clean:
 zephyr-clean:
 	$(COMPOSE) down -v
 
+## Build firmware in Docker using PlatformIO
+build: pio-init
+	mkdir -p build
+	$(COMPOSE) run --rm pio-build
+
+## Initialize PlatformIO packages (only needed once, cached in Docker volume)
+pio-init:
+	$(COMPOSE) run --rm pio-init
+
+## Remove firmware build artifacts from host
+build-clean:
+	rm -rf build
+
+## Remove PlatformIO packages volume (forces re-download; also removes zephyr-workspace)
+pio-clean:
+	$(COMPOSE) down -v
+
 ## Show available targets
 help:
 	@echo "Usage:"
@@ -32,3 +49,7 @@ help:
 	@echo "  make zephyr-init                   Initialize Zephyr workspace"
 	@echo "  make test-clean                    Remove test build artifacts"
 	@echo "  make zephyr-clean                  Remove Zephyr Docker volume"
+	@echo "  make build                         Build firmware with PlatformIO"
+	@echo "  make pio-init                      Initialize PlatformIO packages"
+	@echo "  make build-clean                   Remove firmware build artifacts"
+	@echo "  make pio-clean                     Remove PlatformIO Docker volume"
