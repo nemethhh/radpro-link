@@ -1,0 +1,72 @@
+services:
+  zephyr-init:
+    image: ghcr.io/zephyrproject-rtos/ci:v0.28.8
+    volumes:
+      - zephyr-workspace:/zephyr-workspace
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        if [ -d /zephyr-workspace/zephyr ]; then
+          echo "Zephyr workspace already initialized"
+          exit 0
+        fi
+        echo "Initializing Zephyr v4.2.0 workspace..."
+        cd /zephyr-workspace
+        west init --mr v4.2.0
+        west update --narrow --fetch-opt=--depth=1 zephyr
+        echo "Zephyr workspace ready"
+
+  unit-test:
+    image: ghcr.io/zephyrproject-rtos/ci:v0.28.8
+    depends_on:
+      zephyr-init:
+        condition: service_completed_successfully
+    volumes:
+      - .:/workspace
+      - zephyr-workspace:/zephyr-workspace
+    working_dir: /workspace
+    environment:
+      - ZEPHYR_BASE=/zephyr-workspace/zephyr
+      - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+      - ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-0.17.4
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        TEST_DIR="${TEST_DIR:-tests/}"
+        echo "=== Building and running tests in: $$TEST_DIR ==="
+
+        if [ -d "$$TEST_DIR" ] && [ "$$TEST_DIR" != "tests/" ]; then
+          # Single suite mode
+          cd "$$TEST_DIR"
+          rm -rf build
+          cmake -B build -GNinja -DBOARD=unit_testing 2>&1
+          ninja -C build 2>&1
+          ./build/testbinary
+        else
+          # All suites mode
+          PASS=0
+          FAIL=0
+          for suite in tests/*/; do
+            [ -f "$$suite/CMakeLists.txt" ] || continue
+            name=$$(basename "$$suite")
+            echo ""
+            echo "=== Suite: $$name ==="
+            cd /workspace/"$$suite"
+            rm -rf build
+            if cmake -B build -GNinja -DBOARD=unit_testing 2>&1 && \
+               ninja -C build 2>&1 && \
+               ./build/testbinary 2>&1; then
+              PASS=$$((PASS + 1))
+            else
+              FAIL=$$((FAIL + 1))
+              echo "FAILED: $$name"
+            fi
+          done
+          echo ""
+          echo "=== RESULTS: $$PASS passed, $$FAIL failed ==="
+          [ "$$FAIL" -eq 0 ]
+        fi
+
+volumes:
+  zephyr-workspace:
