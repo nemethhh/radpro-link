@@ -1,14 +1,13 @@
 /*
  * SPDX-License-Identifier: MIT
  *
- * XIAO BLE-UART Bridge - Modular Architecture
+ * RadPro-Link - BLE Bridge for RadPro Radiation Detectors
  * Main Application Entry Point
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
 #include "board/board_config.h"
@@ -31,53 +30,51 @@ static int app_init(void)
 {
 	int err;
 
-	/* Use printk for early logging before log subsystem is ready */
-	printk("\n=== XIAO BLE Bridge Starting ===\n");
-	printk("Modular Architecture\n");
-	printk("Pairing window: %d minutes\n", PAIRING_WINDOW_MS / 60000);
-	printk("Device: %s\n", CONFIG_BT_DEVICE_NAME);
+	LOG_INF("=== RadPro-Link Starting ===");
+	LOG_INF("Pairing window: %d minutes", PAIRING_WINDOW_MS / 60000);
+	LOG_INF("Device: %s", CONFIG_BT_DEVICE_NAME);
 
 	/* Initialize board-specific hardware */
-	printk("Initializing board hardware...\n");
+	LOG_INF("Initializing board hardware");
 	err = board_init();
 	if (err) {
-		printk("ERROR: Board init failed: %d\n", err);
+		LOG_ERR("Board init failed: %d", err);
 		return err;
 	}
-	printk("Board hardware initialized\n");
+	LOG_INF("Board hardware initialized");
 
 	/* Initialize LED status */
-	printk("Initializing LED status...\n");
+	LOG_INF("Initializing LED status");
 	err = led_status_init();
 	if (err) {
-		printk("ERROR: LED init failed: %d\n", err);
+		LOG_ERR("LED init failed: %d", err);
 		return err;
 	}
-	printk("LED status initialized\n");
+	LOG_INF("LED status initialized");
 
 	/* Initialize security manager */
-	printk("Initializing security manager...\n");
+	LOG_INF("Initializing security manager");
 	err = security_manager_init(PAIRING_WINDOW_MS);
 	if (err) {
-		printk("ERROR: Security manager init failed: %d\n", err);
+		LOG_ERR("Security manager init failed: %d", err);
 		return err;
 	}
-	printk("Security manager initialized\n");
+	LOG_INF("Security manager initialized");
 
 	/* Initialize UART bridge (non-fatal - BLE can work without it) */
-	printk("Initializing UART bridge...\n");
+	LOG_INF("Initializing UART bridge");
 	err = uart_bridge_init(uart_data_handler);
 	if (err) {
-		printk("WARNING: UART bridge init failed: %d\n", err);
-		printk("BLE will work but UART forwarding is disabled\n");
+		LOG_WRN("UART bridge init failed: %d", err);
+		LOG_WRN("BLE will work but UART forwarding is disabled");
 	} else {
-		printk("UART bridge initialized\n");
+		LOG_INF("UART bridge initialized");
 	}
 
 	/* Initialize Bluetooth */
 	err = bt_enable(NULL);
 	if (err) {
-		printk("Bluetooth init failed: %d\n", err);
+		LOG_ERR("Bluetooth init failed: %d", err);
 		return err;
 	}
 
@@ -86,7 +83,7 @@ static int app_init(void)
 	bt_addr_le_t addr;
 	bt_id_get(&addr, &count);
 	if (count > 0) {
-		printk("MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+		LOG_INF("MAC: %02X:%02X:%02X:%02X:%02X:%02X",
 			addr.a.val[5], addr.a.val[4], addr.a.val[3],
 			addr.a.val[2], addr.a.val[1], addr.a.val[0]);
 	}
@@ -102,14 +99,14 @@ static int app_init(void)
 	/* Initialize BLE service */
 	err = ble_service_init(ble_data_handler);
 	if (err) {
-		printk("BLE service init failed: %d\n", err);
+		LOG_ERR("BLE service init failed: %d", err);
 		return err;
 	}
 
 	/* Start advertising */
 	err = ble_service_start_advertising();
 	if (err) {
-		printk("Advertising start failed: %d\n", err);
+		LOG_ERR("Advertising start failed: %d", err);
 		return err;
 	}
 
@@ -164,12 +161,12 @@ int main(void)
 	int err = app_init();
 
 	if (err) {
-		printk("Initialization failed: %d\n", err);
+		LOG_ERR("Initialization failed: %d", err);
 		led_status_error();
 		return err;
 	}
 
-	printk("=== System Running ===\n");
+	LOG_INF("=== System Running ===");
 
 	/* Main loop - just sleep, threads handle everything */
 	while (1) {

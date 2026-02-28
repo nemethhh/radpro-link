@@ -1,24 +1,18 @@
 /*
  * SPDX-License-Identifier: MIT
  *
- * Device Tree Overlay for XIAO nRF54L15 UART-to-BLE Bridge
+ * Device Tree Overlay for RadPro-Link on XIAO nRF54L15
  *
- * Configuration:
- * - UART20: P1.9 (TX) / P1.8 (RX) → USB-to-UART bridge (console to /dev/ttyACM0)
- * - UART21: P2.8 (TX) / P2.7 (RX) → External device (RadPro) on D6/D7 pins (board default)
- * - LED0: P2.0 (board default, used for status)
+ * Hardware:
+ * - UART20: P1.9 (TX) / P1.8 (RX) - USB-to-UART bridge (not used for console)
+ * - UART21: P2.8 (TX) / P2.7 (RX) - External device (RadPro) on D6/D7 pins
+ * - LED0: P2.0 (status indication)
+ * - Console: RTT via SWD debug interface (nRF54L15 has no USB hardware)
  */
 
 / {
 	chosen {
 		/* Use UART21 for bridge application on D6/D7 pins */
 		app-bridge-uart = &uart21;
-		/* Console uses UART20 (USB-to-UART bridge) */
 	};
-};
-
-/* UART21 - External device communication on D6/D7 connector pins */
-&uart21 {
-	status = "okay";
-	current-speed = <115200>;
 };

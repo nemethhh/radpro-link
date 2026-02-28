@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 #
-# CMakeLists.txt for UART-to-BLE Bridge
+# CMakeLists.txt for RadPro-Link
 # PlatformIO + Zephyr RTOS Build Configuration
 
 # Set board root for Seeed Studio platform
@@ -16,9 +16,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 # Project definition
-project(uart_to_ble_bridge
-    VERSION 1.0.0
-    DESCRIPTION "UART to BLE Bridge for Seeed XIAO nRF54L15"
+project(radpro_link
+    VERSION 2.0.0
+    DESCRIPTION "RadPro-Link BLE Bridge for Seeed XIAO nRF54L15"
     LANGUAGES C
 )
 
