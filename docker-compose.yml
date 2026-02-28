@@ -70,7 +70,12 @@ services:
         fi
 
   pio-init:
-    image: platformio/platformio-core:latest
+    build:
+      dockerfile_inline: |
+        FROM python:3.12-slim
+        RUN apt-get update && apt-get install -y --no-install-recommends git \
+            && rm -rf /var/lib/apt/lists/*
+        RUN pip install platformio
     volumes:
       - .:/workspace
       - pio-packages:/root/.platformio
@@ -88,7 +93,12 @@ services:
         echo "PlatformIO packages ready"
 
   pio-build:
-    image: platformio/platformio-core:latest
+    build:
+      dockerfile_inline: |
+        FROM python:3.12-slim
+        RUN apt-get update && apt-get install -y --no-install-recommends git \
+            && rm -rf /var/lib/apt/lists/*
+        RUN pip install platformio
     depends_on:
       pio-init:
         condition: service_completed_successfully
