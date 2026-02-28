@@ -36,6 +36,9 @@ venv/
 readme/
 .claude/
 
+# Worktrees
+.worktrees/
+
 # Temporary files
 *.log
 *.tmp
