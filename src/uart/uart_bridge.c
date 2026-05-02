@@ -11,11 +11,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(uart_bridge, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(uart_bridge, LOG_LEVEL_INF);
 
 #define UART_BUF_SIZE           256
 #define UART_WAIT_FOR_BUF_DELAY K_MSEC(50)
-#define UART_WAIT_FOR_RX_MS     50
+#define UART_WAIT_FOR_RX_MS     50000
 
 struct uart_data_t {
 	void *fifo_reserved;
@@ -29,7 +29,6 @@ static struct k_work_delayable uart_work;
 static K_FIFO_DEFINE(fifo_uart_tx_data);
 static K_FIFO_DEFINE(fifo_uart_rx_data);
 static uart_data_received_cb_t data_received_callback;
-static uint32_t uart_log_count = 0;
 static bool uart_initialized = false;
 
 /* Get UART device from device tree chosen node */
@@ -84,17 +83,12 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		break;
 
 	case UART_RX_RDY:
-		LOG_DBG("RX ready");
 		buf = CONTAINER_OF(evt->data.rx.buf, struct uart_data_t, data[0]);
 		buf->len += evt->data.rx.len;
+		LOG_INF("RDY offset=%u len=%u total=%u", evt->data.rx.offset, evt->data.rx.len, buf->len);
 
 		if (disable_req) {
 			return;
-		}
-
-		/* Log occasionally to prevent spam */
-		if ((++uart_log_count % 100) == 0) {
-			LOG_INF("Received %d bytes (count: %u)", evt->data.rx.len, uart_log_count);
 		}
 
 		if ((evt->data.rx.buf[buf->len - 1] == '\n') ||
@@ -136,7 +130,7 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		buf = CONTAINER_OF(evt->data.rx_buf.buf, struct uart_data_t, data[0]);
 
 		if (buf->len > 0) {
-			LOG_DBG("Queuing %d bytes for callback", buf->len);
+			LOG_HEXDUMP_INF(buf->data, buf->len, "RX-rel:");
 			k_fifo_put(&fifo_uart_rx_data, buf);
 		} else {
 			k_free(buf);

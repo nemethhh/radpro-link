@@ -126,6 +126,7 @@ static int app_init(void)
 static void uart_data_handler(const uint8_t *data, uint16_t len)
 {
 	/* UART → BLE: Forward data from UART to BLE */
+	LOG_HEXDUMP_INF(data, len, "UART→BLE:");
 	if (ble_service_is_authenticated()) {
 		int err = ble_service_send(data, len);
 		if (err) {

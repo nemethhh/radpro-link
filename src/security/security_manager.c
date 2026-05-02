@@ -112,9 +112,12 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 		bt_security_err_to_str(reason));
 }
 
+/* NoInputNoOutput IO capability → Just Works SC pairing (no passkey needed).
+ * Headless device: no display/buttons, so DisplayYesNo would require PC-side
+ * confirmation that can't happen programmatically. */
 static struct bt_conn_auth_cb conn_auth_callbacks = {
-	.passkey_display = auth_passkey_display,
-	.passkey_confirm = auth_passkey_confirm,
+	.passkey_display = NULL,
+	.passkey_confirm = NULL,
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
