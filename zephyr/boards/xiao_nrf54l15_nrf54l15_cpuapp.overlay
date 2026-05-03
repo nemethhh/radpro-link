@@ -14,5 +14,24 @@
 	chosen {
 		/* Use UART21 for bridge application on D6/D7 pins */
 		app-bridge-uart = &uart21;
+
+		/*
+		 * The base DTS assigns zephyr,console = &uart20.  Explicitly
+		 * delete that property so no driver can claim UART20 as console
+		 * even if CONFIG_UART_CONSOLE were accidentally re-enabled.
+		 */
+		/delete-property/ zephyr,console;
+		/delete-property/ zephyr,shell-uart;
 	};
+};
+
+/*
+ * Disable UART20 (SAMD11 USB-UART bridge path, P1.9/P1.8).
+ * UART20 is only usable when the CMSIS-DAP chip is powered via USB VBUS.
+ * Without USB the node must be disabled so the driver is not initialised
+ * during SYS_INIT - otherwise the MCU hangs before reaching main().
+ * Console and logging are routed to RTT instead (see .conf file).
+ */
+&uart20 {
+	status = "disabled";
 };
